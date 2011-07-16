@@ -1,0 +1,14 @@
+h1. Google Charts for WordPress
+
+*Work in progress.* A first version will be ready July 20, 2011. 
+
+h2. Supported Chart Types
+
+* *Pie Chart*<br/>"http://code.google.com/apis/chart/interactive/docs/gallery/piechart.html":http://code.google.com/apis/chart/interactive/docs/gallery/piechart.html
+* *Column Chart*<br />"http://code.google.com/apis/chart/interactive/docs/gallery/columnchart.html":http://code.google.com/apis/chart/interactive/docs/gallery/columnchart.html
+
+h2. Shortcode
+
+Shortcode to include a chart in a post or a page:
+
+<code>[googlechart id="123" width="400" height="300"]</code>
