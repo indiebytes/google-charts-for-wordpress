@@ -1,6 +1,31 @@
 #gcwp-data {
+    padding: 10px 2px 10px 2px;
     overflow-y: auto;
+    width: 100%;
+}
+#gcwp-data,
+.top-actions {
+    border-bottom: 1px solid #DFDFDF;
+}
+#gcwp-data,
+.bottom-actions {
+    border-top: 1px solid white;
+}
+#gcwp-data td.action {
+    text-align: center;
+}
+a.gcwp-delete-column {
+    color: #BC0B0B;
+    font-size: 12px;
+    text-decoration: none;
 }
 #gcwp-data th input {
     font-weight: 700;
+}
+.gcwp-actions {
+    padding: 10px 10px 2px 0;
+    text-align: left;
+}
+.top-actions {
+    padding-bottom: 10px;
 }
