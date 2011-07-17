@@ -14,7 +14,8 @@
 #gcwp-data td.action {
     text-align: center;
 }
-a.gcwp-delete-column {
+a.gcwp-delete-column,
+a.gcwp-delete-row {
     color: #BC0B0B;
     font-size: 12px;
     text-decoration: none;
@@ -27,5 +28,13 @@ a.gcwp-delete-column {
     text-align: left;
 }
 .top-actions {
+    border-top: 1px solid white;
     padding-bottom: 10px;
+}
+.gcwp-chart-information {
+    border-bottom: 1px solid #DFDFDF;
+    display: none;
+}
+#gcwp-pie-chart-information {
+    display: block;
 }

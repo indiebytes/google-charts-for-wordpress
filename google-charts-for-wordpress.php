@@ -93,7 +93,6 @@ class GoogleChartsForWordPress
         add_action('init', array(&$this, 'createPostType'));
         add_action('init', array(&$this, 'init'));
         add_action('admin_init', array(&$this, 'adminInit'));
-        add_action('admin_menu', array(&$this, 'menu'));
         add_action('save_post', array(&$this, 'postTypeSave'));
         
         /**
@@ -241,8 +240,8 @@ class GoogleChartsForWordPress
     function postTypeColumnOutput($column)
     {
         global $post;
-        $json = get_post_meta($post->ID, 'gcwp_json', true);
-        $data = $json ? unserialize($json) : $this->defaultData;
+        $serializedData = get_post_meta($post->ID, 'gcwp', true);
+        $data = $serializedData ? unserialize($serializedData) : $this->defaultData;
         switch ($column) {
             case 'format':
                 $googleChartObject = '';
@@ -262,8 +261,8 @@ class GoogleChartsForWordPress
     function postTypeMetaFormat()
     {
         global $post;
-        $json = get_post_meta($post->ID, 'gcwp_json', true);
-        $data = $json ? unserialize($json) : $this->defaultData;
+        $serializedData = get_post_meta($post->ID, 'gcwp', true);
+        $data = $serializedData ? unserialize($serializedData) : $this->defaultData;
 ?>
     <div id="post-formats-select">
         <input type="radio" name="gcwp[chart_format]" class="post-format" id="post-format-pie" value="pie-chart"<?php checked('pie-chart', $data['chart_format']); ?>> <label for="post-format-pie"><?php _e('Pie Chart', 'gcwp'); ?></label>
@@ -289,14 +288,34 @@ class GoogleChartsForWordPress
 
     function postTypeMetaDataTable()
     { ?>
+        <div id="gcwp-pie-chart-information" class="gcwp-chart-information">
+            <h4>Data Tables for Pie Charts</h4>
+            <p>
+                Two columns. The first column should be a string, and contain the slice label.
+                The second column should be a number, and contain the slice value.
+            </p>
+        </div>
+
+        <div id="gcwp-column-chart-information" class="gcwp-chart-information">
+            <h4>Data Tables for Column Charts</h4>
+            <p>
+                Each row in the table represents a group of adjacent bars. The first column in
+                the table should be a string, and represents the label of that group of bars. 
+                Any number of columns can follow, all numeric, each representing the bars with
+                the same color and relative position in each group. The value at a given row
+                and column controls the height of the single bar represented by this row and
+                column.
+            </p>
+        </div>
+        
         <div class="gcwp-actions top-actions"><a href="#" class="button gcwp-add-row">Add New Row</a> <a href="#" class="button gcwp-add-column">Add New Column</a></div>
         <div id="gcwp-data">
             <?php
                 global $post;
-                $json = get_post_meta($post->ID, 'gcwp_json', true);
-                $data = $json ? unserialize($json) : $this->defaultData;
+                $serializedData = get_post_meta($post->ID, 'gcwp', true);
+                $data = $serializedData ? unserialize($serializedData) : $this->defaultData;
                 $html = '<table>';
-                $html .= '<tr>';
+                $html .= '<tr><td></td>';
                 foreach ($data['data_table']['columns'] as $columnIndex => $column) {
                     if ($columnIndex > 1) {
                         $html .= '<td class="action"><a href="#" class="gcwp-delete-column submitdelete">Delete</a></td>';
@@ -304,15 +323,23 @@ class GoogleChartsForWordPress
                         $html .= '<td></td>';
                     }
                 }
-                $html .= '</tr>';
+                $html .= '<td></td></tr>';
                 for ($i = 0; $i <= $data['rows']; $i++) {
-                    $html .= '<tr>';
+                    if ($i > 2) {
+                        $html .= '<tr><td class="action"><a href="#" class="gcwp-delete-row submitdelete">Delete</a></td>';
+                    } else {
+                        $html .= '<tr><td></td>';
+                    }
                     foreach ($data['data_table']['columns'] as $columnIndex => $column) {
                         $html .= sprintf('<%s><input type="text" value="%s" name="gcwp[data_table][columns][%s][]" /></%s>', $i == 0 ? 'th' : 'td', $column[$i], $columnIndex, $i == 0 ? 'th' : 'td');
                     }
-                    $html .= '</tr>';
+                    if ($i > 2) {
+                        $html .= '<td class="action"><a href="#" class="gcwp-delete-row submitdelete">Delete</a></td></tr>';
+                    } else {
+                        $html .= '<td></td></tr>';
+                    }
                 }
-                $html .= '<tr>';
+                $html .= '<tr><td></td>';
                 foreach ($data['data_table']['columns'] as $columnIndex => $column) {
                     if ($columnIndex > 1) {
                         $html .= '<td class="action"><a href="#" class="gcwp-delete-column submitdelete">Delete</a></td>';
@@ -320,7 +347,7 @@ class GoogleChartsForWordPress
                         $html .= '<td></td>';
                     }
                 }
-                $html .= '</tr>';
+                $html .= '<td></td></tr>';
                 $html .= '</table>';
                 echo $html;
 
@@ -328,13 +355,6 @@ class GoogleChartsForWordPress
         </div>
         <div class="gcwp-actions bottom-actions"><a href="#" class="button gcwp-add-row">Add New Row</a> <a href="#" class="button gcwp-add-column">Add New Column</a></div>
     <?php }
-
-    function postTypeMeta() { echo "Lorem ipsum"; }
-
-    function encodeItems(&$item, $key)
-    {
-        $item = utf8_encode($item);
-    }
 
     /**
      * undocumented function
@@ -377,16 +397,16 @@ class GoogleChartsForWordPress
         $data['rows'] = count($data['data_table']['columns'][0]) - 1;
         $data['columns'] = count($data['data_table']['columns']);
 
-        $json = serialize($data);
+        $serializedData = serialize($data);
 
-        if (get_post_meta($post->ID, 'gcwp_json', false)) {
-            update_post_meta($post->ID, 'gcwp_json', $json);
+        if (get_post_meta($post->ID, 'gcwp', false)) {
+            update_post_meta($post->ID, 'gcwp', $serializedData);
         } else {
-            add_post_meta($post->ID, 'gcwp_json', $json);
+            add_post_meta($post->ID, 'gcwp', $serializedData);
         }
 
         if (!$_POST['gcwp']) {
-            delete_post_meta($post->ID, 'gcwp_json');
+            delete_post_meta($post->ID, 'gcwp');
         }
     }
 
@@ -401,7 +421,8 @@ class GoogleChartsForWordPress
             shortcode_atts(
                 array(
                     'id' => null,
-                    'title' => null,
+                    'width' => 450,
+                    'height' => 300
                 ), 
                 $atts
             )
@@ -411,8 +432,8 @@ class GoogleChartsForWordPress
         $post = get_post($id);
 
         // 2. Load and populate js-template based on chart type
-        $json = get_post_meta($id, 'gcwp_json', true);
-        $data = unserialize($json);
+        $serializedData = get_post_meta($id, 'gcwp', true);
+        $data = unserialize($serializedData);
         $jsDataTable = $this->generateJsDataTable($data);
 
         $googleChartObject = '';
@@ -430,7 +451,7 @@ class GoogleChartsForWordPress
                     $jsDataTable
 
                     var chart = new google.visualization.$googleChartObject(document.getElementById('gcwp-$id'));
-                    chart.draw(data, {width: 450, height: 300, title: '$post->post_title'});
+                    chart.draw(data, {width: $width, height: $height, title: '$post->post_title'});
                 }
             </script>
 JS;
@@ -477,37 +498,6 @@ JS;
         $js .= $setValues;
 
         return $js;
-    }
-
-    /**
-     * Menu
-     *
-     * @return void
-     * @author Andreas Karlsson
-     **/
-    function menu()
-    {
-        if (function_exists('add_submenu_page')) {
-            $page = add_submenu_page(
-                'options-general.php',
-                __('Google Charts for WordPress', 'gcwp'),
-                __('Google Charts for WordPress', 'gcwp'),
-                'manage_options',
-                'gcwp-config',
-                array(&$this, 'page')
-            );
-        }
-    }
-
-    /**
-     * Load settings page
-     *
-     * @return void
-     * @author Andreas Karlsson
-     **/
-    function page()
-    {
-        // require_once 'admin/settings.php';
     }
 
     /**

@@ -8,7 +8,11 @@ jQuery('.gcwp-add-row').live('click', function(event) {
         jQuery('#gcwp-data tr:last').each(function() {
                 var html = '<tr>';
                 for (var i = 0; i < gcwp_columns; i++) {
-                    html += '<td><input type="text" name="gcwp[data_table][columns]['+i+'][]" /></td>';
+                    if (i == 0 || i == gcwp_columns-1) {
+                        html += '<td class="action"><a href="#" class="gcwp-delete-row submitdelete">Delete</a></td>';
+                    } else {
+                        html += '<td><input type="text" name="gcwp[data_table][columns]['+(i-1)+'][]" /></td>';
+                    }
                 }
                 html += '</tr>';
                 jQuery(this).before(html);
@@ -23,17 +27,17 @@ jQuery('.gcwp-add-column').live('click', function(event) {
 
         var i = 0;
         jQuery('#gcwp-data tr').each(function() {
-            jQuery(this).find('th:last,td:last').each(function() {
+            jQuery(this).find('td:last').each(function() {
                 var html = '';
                 if (i == 0 || i == gcwp_rows-1) {
                     html += '<td class="action"><a href="#" class="gcwp-delete-column submitdelete">Delete</a></td>';
                 } else {
                     html += '<' + this.tagName + '>';
-                    html += '<input type="text" name="gcwp[data_table][columns]['+gcwp_columns+'][]" />';
+                    html += '<input type="text" name="gcwp[data_table][columns][' + (gcwp_columns-2) + '][]" />';
                     html += '</' + this.tagName + '>';
                 }
                 i++;
-                jQuery(this).after(html);
+                jQuery(this).before(html);
             });
         });
         gcwpFadeColumns();
@@ -41,13 +45,14 @@ jQuery('.gcwp-add-column').live('click', function(event) {
 });
 
 function gcwpFadeColumns() {
-    jQuery('#gcwp-format input[type="radio"]:checked').each(function() { 
+    jQuery('#gcwp-format input[type="radio"]:checked').each(function() {
+
         if (jQuery(this).val() == 'pie-chart') {
             jQuery('#gcwp-data tr').each(function() {
                 var i = 0;
                 jQuery(this).find('th input,td input').each(function() {
                     if (i > 1) {
-                        jQuery(this).fadeTo('fast', 0.5);
+                        jQuery(this).fadeTo('fast', 0.3);
                     }
                     i++;
                 });
@@ -80,8 +85,11 @@ jQuery(document).ready(function() {
     gcwpFadeColumns();
     jQuery('#gcwp-format input[type="radio"]').bind('change', function() {
         gcwpFadeColumns();
+        jQuery('.gcwp-chart-information').each(function() {
+            jQuery(this).toggle();
+        });
     });
-    
+
     jQuery("a.gcwp-delete-column").live("click", function() {
         /* Better index-calculation from @activa */
         var myIndex = jQuery(this).closest("td").prevAll("td").length;
@@ -89,6 +97,11 @@ jQuery(document).ready(function() {
             jQuery(this).find("td:eq("+myIndex+"),th:eq("+myIndex+")").remove();
             fixIndices();
         });
+        event.preventDefault();
+    });
+
+    jQuery("a.gcwp-delete-row").live("click", function() {
+        var myIndex = jQuery(this).closest("tr").remove();
         event.preventDefault();
     });
 });
