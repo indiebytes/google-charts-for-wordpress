@@ -61,6 +61,18 @@ if (!load_plugin_textdomain('gcwp', false, '/wp-content/languages/')) {
  **/
 class GoogleChartsForWordPress
 {
+    public $defaultData = array(
+        'chart_format' => 'pie-chart',
+        'data_table' => array(
+            'columns' => array(
+                array('Tasks', 'Write a blog post', 'Create a Google Chart'),
+                array('Hours per week', 1, 1),
+            )
+        ),
+        'columns' => 2,
+        'rows' => 2
+    );
+    
     /**
      * Constructor
      *
@@ -82,6 +94,7 @@ class GoogleChartsForWordPress
         add_action('init', array(&$this, 'init'));
         add_action('admin_init', array(&$this, 'adminInit'));
         add_action('admin_menu', array(&$this, 'menu'));
+        add_action('save_post', array(&$this, 'postTypeSave'));
         
         /**
          * Shortcodes
@@ -178,14 +191,16 @@ class GoogleChartsForWordPress
 
         wp_register_style(
             'gcwp_css',
-            plugins_url('css/style.css', __FILE__),
+            plugins_url(basename(dirname(plugin_basename(__FILE__))) . '/css/style.css'),
             array(), GOOGLE_CHARTS_FOR_WORDPRESS_VERSION
         );
         wp_register_script(
             'gcwp_js',
-            plugins_url('/js/script.js', __FILE__),
-            array(), GOOGLE_CHARTS_FOR_WORDPRESS_VERSION, true
+            plugins_url(basename(dirname(plugin_basename(__FILE__))) . '/js/script.js')
         );
+        wp_enqueue_style('gcwp_css');
+        wp_enqueue_script('gcwp_js');
+
         register_setting('gcwp', 'gcwp');
     }
 
@@ -228,6 +243,7 @@ class GoogleChartsForWordPress
         $columns = array(
             'cb' => '<input type="checkbox" />',
             'title' => __('Title', 'gcwp'),
+            'format' => __('Chart Format', 'gcwp'),
             'shortcode' => __('Shortcode', 'gcwp'),
         );
         return $columns;
@@ -236,144 +252,132 @@ class GoogleChartsForWordPress
     function postTypeColumnOutput($column)
     {
         global $post;
+        $json = get_post_meta($post->ID, 'gcwp_json', true);
+        $data = $json ? json_decode($json, true) : $this->defaultData;
         switch ($column) {
+            case 'format':
+                $googleChartObject = '';
+                foreach (explode('-', $data['chart_format']) as $word) {
+                    $googleChartObject .= ucfirst($word);
+                }
+                echo $googleChartObject;
+                break;
             case 'shortcode':
                 printf('[googlechart id="%d"]', $post->ID);
+                break;
             default:
                 break;
         }
     }
     
     function postTypeMetaFormat()
-    { ?>
-
+    {
+        global $post;
+        $json = get_post_meta($post->ID, 'gcwp_json', true);
+        $data = $json ? json_decode($json, true) : $this->defaultData;
+?>
     <div id="post-formats-select">
-        <input type="radio" name="post_format" class="post-format" id="post-format-pie" value="pie-chart" checked="checked"> <label for="post-format-pie"><?php _e('Pie Chart', 'gcwp'); ?></label>
+        <input type="radio" name="gcwp[chart_format]" class="post-format" id="post-format-pie" value="pie-chart"<?php checked('pie-chart', $data['chart_format']); ?>> <label for="post-format-pie"><?php _e('Pie Chart', 'gcwp'); ?></label>
         <br />
-        <input type="radio" name="post_format" class="post-format" id="post-format-column" value="column-chart"> <label for="post-format-column"><?php _e('Column Chart', 'gcwp'); ?></label>
+        <input type="radio" name="gcwp[chart_format]" class="post-format" id="post-format-column" value="column-chart"<?php checked('column-chart', $data['chart_format']); ?>> <label for="post-format-column"><?php _e('Column Chart', 'gcwp'); ?></label>
     </div>
-    <script>
-        jQuery("#post-formats-select").delegate("input", "change", function() {
-                jQuery(".gcwp-data").hide();
-                jQuery("#gcwp-" + this.value).toggle();
-            }
-        );
-    </script>
+    <?php echo '<input type="hidden" name="gcwp_noncename" id="gcwp_noncename" value="' .
+            wp_create_nonce(plugin_basename(__FILE__)) . '" />'; ?>
+
     <?php }
 
     function postTypeMetaPreview()
-    { ?>
+    { 
+        global $post;
+?>
 
-    <div id="gcwp-preview">Low priority, but nice to have.</div>
-
-    <?php }
-
-    function postTypeMetaColumns()
-    { ?>
-
-    <h4>Label</h4>
-    <input type="text" />
-    <h4>Column</h4>
-    <table>
-        <thead>
-        <tr>
-            <th>A</th>
-            <th>B</th>
-            <th>C</th>
-        </tr>
-        </thead>
-    </table>
-    <a href="#">Add another column</a>
+    <div id="gcwp-preview">
+        <?php echo do_shortcode("[googlechart id='$post->ID']")?>
+    </div>
 
     <?php }
 
     function postTypeMetaDataTable()
     { ?>
-        <div id="gcwp-pie-chart" class="gcwp-data">
-            <table>
-                <tr>
-                    <th>
-                        <h4>Slices Title</h4>
-                        <p><input type="hidden" value="0" /> <input type="text" value="Tasks" /></p>
-                    </th>
-                    <th>
-                        <h4>Values Title</h4>
-                        <p><input type="hidden" value="0" /> <input type="text" value="Hours per Day" /></p>
-                    </th>
-                    <!--<th>Color</th>-->
-                </tr>
-                <tr>
-                    <td>
-                        <input type="text" value="Work" />
-                    </td>
-                    <td>
-                        <input type="text" value="8" />
-                    </td>
-                    <!--<td>
-                        <input type="text" value="cccc00" />
-                        <input type="hidden" value="1" />
-                    </td>-->
-                </tr>
-                <tr>
-                    <td>
-                        <input type="text" value="Watch TV" />
-                    </td>
-                    <td>
-                        <input type="text" value="12" />
-                    </td>
-                    <!--<td>
-                        <input type="text" value="00cccc" />
-                        <input type="hidden" value="1" />
-                    </td>-->
-                </tr>
-            </table>
-            <p><a href="#">Add row</a></p>
-        </div>
+        <p><a href="#" class="gcwp-add-row">Add row</a> | <a href="#" class="gcwp-add-column">Add column</a></p>
+        <div id="gcwp-data">
+            <pre>
+            <?php
+                global $post;
+                $json = get_post_meta($post->ID, 'gcwp_json', true);
+                $data = $json ? json_decode($json, true) : $this->defaultData;
+                $html = '</pre><table>';
+                for ($i = 0; $i <= $data['rows']; $i++) {
+                    $html .= '<tr>';
+                    foreach ($data['data_table']['columns'] as $columnIndex => $column) {
+                        $html .= sprintf('<%s><input type="text" value="%s" name="gcwp[data_table][columns][%s][]" /></%s>', $i == 0 ? 'th' : 'td', $column[$i], $columnIndex, $i == 0 ? 'th' : 'td');
+                    }
+                    $html .= '</tr>';
+                }
+                $html .= '</table>';
+                echo $html;
 
-        <div id="gcwp-column-chart" class="gcwp-data" style="display: none;">
-            <table>
-                <tr>
-                    <th>
-                        <h4>Bar Group Title</h4>
-                        <p><input type="hidden" value="0" /> <input type="text" value="Year" /></p>
-                    </th>
-                    <th>
-                        <h4>Values Title</h4>
-                        <p><input type="hidden" value="0" /> <input type="text" value="Sales" /></p>
-                    </th>
-                    <th>
-                        <h4>Values Title</h4>
-                        <p><input type="hidden" value="0" /> <input type="text" value="Expenses" /></p>
-                    </th>
-                </tr>
-                <tr>
-                    <td>
-                        <input type="text" value="2004" />
-                    </td>
-                    <td>
-                        <input type="text" value="1000" />
-                    </td>
-                    <td>
-                        <input type="text" value="400" />
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <input type="text" value="2005" />
-                    </td>
-                    <td>
-                        <input type="text" value="1170" />
-                    </td>
-                    <td>
-                        <input type="text" value="460" />
-                    </td>
-                </tr>
-            </table>
-            <p><a href="#">Add row</a> | <a href="#">Add column</a></p>
+            ?>
         </div>
+        <p><a href="#" class="gcwp-add-row">Add row</a> | <a href="#" class="gcwp-add-column">Add column</a></p>
     <?php }
 
     function postTypeMeta() { echo "Lorem ipsum"; }
+
+    /**
+     * undocumented function
+     *
+     * @return void
+     * @author Andreas Karlsson
+     **/
+    function postTypeSave($postId)
+    {
+        global $post;
+
+        /**
+         * Verify if this is an auto save routine. If it is our form has not
+         * been submitted, so we dont want to do anything.
+         **/
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return;
+        }
+
+        if ($post === null || $post->post_type == 'revision') {
+            return;
+        }
+
+        if (!wp_verify_nonce($_POST['gcwp_noncename'], plugin_basename( __FILE__ ))) {
+            return;
+        }
+
+        // Check permissions
+        if ('page' == $_POST['post_type']) {
+            if (!current_user_can('edit_page', $postId)) {
+                return;
+            }
+        } else {
+            if (!current_user_can('edit_post', $postId)) {
+                return;
+            }
+        }
+
+        $data = $_POST['gcwp'];
+        $data['rows'] = count($data['data_table']['columns'][0]) - 1;
+        $data['columns'] = count($data['data_table']['columns']);
+
+        $json = json_encode($data);
+
+        if (get_post_meta($post->ID, 'gcwp_json', false)) {
+            update_post_meta($post->ID, 'gcwp_json', $json);
+        } else {
+            add_post_meta($post->ID, 'gcwp_json', $json);
+        }
+
+        if (!$_POST['gcwp']) {
+            delete_post_meta($post->ID, 'gcwp_json');
+        }
+    }
+
     /**
      * Shortcode
      *
@@ -392,38 +396,75 @@ class GoogleChartsForWordPress
         );
 
         // 1. Get chart
-        
-        // 2. Load and populate js-template based on chart type
-        
-        // 3. Return HTML and javascript
+        $post = get_post($id);
 
+        // 2. Load and populate js-template based on chart type
+        $json = get_post_meta($id, 'gcwp_json', true);
+        $data = json_decode($json, true);
+        $jsDataTable = $this->generateJsDataTable($data);
+
+        $googleChartObject = '';
+
+        foreach (explode('-', $data['chart_format']) as $word) {
+            $googleChartObject .= ucfirst($word);
+        }
+
+        // 3. Return HTML and javascript
         $js = <<< JS
             <script type="text/javascript">
-              google.load("visualization", "1", {packages:["corechart"]});
-              google.setOnLoadCallback(drawChart);
-              function drawChart() {
-                var data = new google.visualization.DataTable();
-                data.addColumn('string', 'Task');
-                data.addColumn('number', 'Hours per Day');
-                data.addRows(5);
-                data.setValue(0, 0, 'Work');
-                data.setValue(0, 1, 11);
-                data.setValue(1, 0, 'Eat');
-                data.setValue(1, 1, 2);
-                data.setValue(2, 0, 'Commute');
-                data.setValue(2, 1, 2);
-                data.setValue(3, 0, 'Watch TV');
-                data.setValue(3, 1, 2);
-                data.setValue(4, 0, 'Sleep');
-                data.setValue(4, 1, 7);
+                google.load("visualization", "1", {packages:["corechart"]});
+                google.setOnLoadCallback(drawChart);
+                function drawChart() {
+                    $jsDataTable
 
-                var chart = new google.visualization.PieChart(document.getElementById('gcwp-2'));
-                chart.draw(data, {width: 450, height: 300, title: 'My Daily Activities'});
-              }
+                    var chart = new google.visualization.$googleChartObject(document.getElementById('gcwp-$id'));
+                    chart.draw(data, {width: 450, height: 300, title: '$post->post_title'});
+                }
             </script>
 JS;
 
-        return sprintf('<div id="gcwp-%d">%d</div>%s', $id, $id, $js);
+        return sprintf('<pre>%s</pre><div id="gcwp-%d"></div>%s', '', $id, $js);
+    }
+
+    /**
+     * undocumented function
+     *
+     * @return void
+     * @author Andreas Karlsson
+     **/
+    function generateJsDataTable($data, $format = 'javascript')
+    {
+        if (!is_array($data)) {
+            return '';
+        }
+
+        $js = 'var data = new google.visualization.DataTable();';
+        $setValues = '';
+
+        if ($data['chart_format'] == 'pie-chart') {
+            $data['columns'] = 2;
+        }
+
+        foreach ($data['data_table']['columns'] as $columnIndex => $column) {
+            $js .= sprintf("data.addColumn('%s', '%s');", $columnIndex == 0 ? 'string' : 'number', $column[0] == '' ? __('Label missing', 'gcwp') : $column[0]);
+
+            foreach ($column as $rowIndex => $value) {
+                if ($rowIndex == 0 || $columnIndex > $data['columns']) {
+                    continue;
+                } else {
+                    if ($value == '') {
+                        $value = $columnIndex == 0 ? __('Label missing', 'gcwp') : 0;
+                    }
+
+                    $setValues .= sprintf('data.setValue(%d, %d, %s);', $rowIndex-1, $columnIndex, $columnIndex == 0 ? "'$value'" : $value);
+                }
+            }
+        }
+
+        $js .= sprintf('data.addRows(%d);', $data['rows']);
+        $js .= $setValues;
+
+        return $js;
     }
 
     /**
@@ -442,14 +483,6 @@ JS;
                 'manage_options',
                 'gcwp-config',
                 array(&$this, 'page')
-            );
-            add_action(
-                'admin_print_scripts-' . $page,
-                array(&$this, 'addJs')
-            );
-            add_action(
-                'admin_print_styles-' . $page,
-                array(&$this, 'addCss')
             );
         }
     }
