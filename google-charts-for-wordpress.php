@@ -31,13 +31,7 @@ define('GOOGLE_CHARTS_FOR_WORDPRESS_PLUGIN_URL', plugin_dir_url(__FILE__ ));
 /**
  * Locale
  */
-if (!load_plugin_textdomain('gcwp', false, '/wp-content/languages/')) {
-    load_plugin_textdomain(
-        'gcwp',
-        false,
-        dirname(__FILE__) . '/languages/'
-    );
-}
+load_plugin_textdomain('gcwp', false,  'google-charts-for-wordpress/languages/');
 
 /**
  * Google Charts For WordPress
@@ -61,17 +55,7 @@ if (!load_plugin_textdomain('gcwp', false, '/wp-content/languages/')) {
  **/
 class GoogleChartsForWordPress
 {
-    public $defaultData = array(
-        'chart_format' => 'pie-chart',
-        'data_table' => array(
-            'columns' => array(
-                array('Tasks', 'Write a blog post', 'Create a Google Chart'),
-                array('Hours per week', 1, 1),
-            )
-        ),
-        'columns' => 2,
-        'rows' => 2
-    );
+    public $defaultData;
     
     /**
      * Constructor
@@ -81,6 +65,18 @@ class GoogleChartsForWordPress
      **/
     public function __construct()
     {
+        $this->defaultData = array(
+            'chart_format' => 'pie-chart',
+            'data_table' => array(
+                'columns' => array(
+                    array(__('Tasks', 'gcwp'), __('Write blog posts', 'gcwp'), __('Create charts', 'gcwp')),
+                    array(__('Hours per week', 'gcwp'), 1, 1),
+                )
+            ),
+            'columns' => 2,
+            'rows' => 2
+        );
+
         /**
          * Activation and deactivation
          */
@@ -94,11 +90,17 @@ class GoogleChartsForWordPress
         add_action('init', array(&$this, 'init'));
         add_action('admin_init', array(&$this, 'adminInit'));
         add_action('save_post', array(&$this, 'postTypeSave'));
+        add_action('admin_print_footer_scripts', array(&$this, 'jsLocale'));
         
         /**
          * Shortcodes
          */
         add_shortcode('googlechart', array(&$this, 'shortcode'));
+    }
+
+    function jsLocale()
+    {
+        printf('<script>var gcwp_delete = "%s";</script>', __('Delete', 'gcwp'));
     }
 
     /**
@@ -289,26 +291,18 @@ class GoogleChartsForWordPress
     function postTypeMetaDataTable()
     { ?>
         <div id="gcwp-pie-chart-information" class="gcwp-chart-information">
-            <h4>Data Tables for Pie Charts</h4>
+            <h4><?php _e('Data Tables for Pie Charts', 'gcwp'); ?></h4>
             <p>
-                Two columns. The first column should be a string, and contain the slice label.
-                The second column should be a number, and contain the slice value.
+                <?php _e('Two columns. The first column should be a string, and contain the slice label. The second column should be a number, and contain the slice value.', 'gcwp'); ?>
             </p>
         </div>
 
         <div id="gcwp-column-chart-information" class="gcwp-chart-information">
-            <h4>Data Tables for Column Charts</h4>
-            <p>
-                Each row in the table represents a group of adjacent bars. The first column in
-                the table should be a string, and represents the label of that group of bars. 
-                Any number of columns can follow, all numeric, each representing the bars with
-                the same color and relative position in each group. The value at a given row
-                and column controls the height of the single bar represented by this row and
-                column.
-            </p>
+            <h4><?php _e('Data Tables for Column Charts', 'gcwp'); ?></h4>
+            <p><?php _e('Each row in the table represents a group of adjacent bars. The first column in the table should be a string, and represents the label of that group of bars. Any number of columns can follow, all numeric, each representing the bars withthe same color and relative position in each group. The value at a given row and column controls the height of the single bar represented by this row and column.', 'gcwp'); ?></p>
         </div>
         
-        <div class="gcwp-actions top-actions"><a href="#" class="button gcwp-add-row">Add New Row</a> <a href="#" class="button gcwp-add-column">Add New Column</a></div>
+        <div class="gcwp-actions top-actions"><a href="#" class="button gcwp-add-row"><?php _e('Add New Row', 'gcwp'); ?></a> <a href="#" class="button gcwp-add-column"><?php _e('Add New Column', 'gcwp'); ?></a></div>
         <div id="gcwp-data">
             <?php
                 global $post;
@@ -318,7 +312,7 @@ class GoogleChartsForWordPress
                 $html .= '<tr><td></td>';
                 foreach ($data['data_table']['columns'] as $columnIndex => $column) {
                     if ($columnIndex > 1) {
-                        $html .= '<td class="action"><a href="#" class="gcwp-delete-column submitdelete">Delete</a></td>';
+                        $html .= sprintf('<td class="action"><a href="#" class="gcwp-delete-column submitdelete">%s</a></td>', __('Delete', 'gcwp'));
                     } else {
                         $html .= '<td></td>';
                     }
@@ -326,7 +320,7 @@ class GoogleChartsForWordPress
                 $html .= '<td></td></tr>';
                 for ($i = 0; $i <= $data['rows']; $i++) {
                     if ($i > 2) {
-                        $html .= '<tr><td class="action"><a href="#" class="gcwp-delete-row submitdelete">Delete</a></td>';
+                        $html .= sprintf('<tr><td class="action"><a href="#" class="gcwp-delete-row submitdelete">%s</a></td>', __('Delete', 'gcwp'));
                     } else {
                         $html .= '<tr><td></td>';
                     }
@@ -334,7 +328,7 @@ class GoogleChartsForWordPress
                         $html .= sprintf('<%s><input type="text" value="%s" name="gcwp[data_table][columns][%s][]" /></%s>', $i == 0 ? 'th' : 'td', $column[$i], $columnIndex, $i == 0 ? 'th' : 'td');
                     }
                     if ($i > 2) {
-                        $html .= '<td class="action"><a href="#" class="gcwp-delete-row submitdelete">Delete</a></td></tr>';
+                        $html .= sprintf('<td class="action"><a href="#" class="gcwp-delete-row submitdelete">%s</a></td></tr>', __('Delete', 'gcwp'));;
                     } else {
                         $html .= '<td></td></tr>';
                     }
@@ -342,7 +336,7 @@ class GoogleChartsForWordPress
                 $html .= '<tr><td></td>';
                 foreach ($data['data_table']['columns'] as $columnIndex => $column) {
                     if ($columnIndex > 1) {
-                        $html .= '<td class="action"><a href="#" class="gcwp-delete-column submitdelete">Delete</a></td>';
+                        $html .= sprintf('<td class="action"><a href="#" class="gcwp-delete-column submitdelete">%s</a></td>', __('Delete', 'gcwp'));
                     } else {
                         $html .= '<td></td>';
                     }
@@ -353,7 +347,7 @@ class GoogleChartsForWordPress
 
             ?>
         </div>
-        <div class="gcwp-actions bottom-actions"><a href="#" class="button gcwp-add-row">Add New Row</a> <a href="#" class="button gcwp-add-column">Add New Column</a></div>
+        <div class="gcwp-actions bottom-actions"><a href="#" class="button gcwp-add-row"><?php _e('Add New Row', 'gcwp'); ?></a> <a href="#" class="button gcwp-add-column"><?php _e('Add New Column', 'gcwp'); ?></a></div>
     <?php }
 
     /**
@@ -378,7 +372,7 @@ class GoogleChartsForWordPress
             return;
         }
 
-        if (!wp_verify_nonce($_POST['gcwp_noncename'], plugin_basename( __FILE__ ))) {
+        if (!array_key_exists('gcwp_noncename', $_POST) && !wp_verify_nonce($_POST['gcwp_noncename'], plugin_basename( __FILE__ ))) {
             return;
         }
 

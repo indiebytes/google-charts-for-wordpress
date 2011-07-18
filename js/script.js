@@ -9,7 +9,7 @@ jQuery('.gcwp-add-row').live('click', function(event) {
                 var html = '<tr>';
                 for (var i = 0; i < gcwp_columns; i++) {
                     if (i == 0 || i == gcwp_columns-1) {
-                        html += '<td class="action"><a href="#" class="gcwp-delete-row submitdelete">Delete</a></td>';
+                        html += '<td class="action"><a href="#" class="gcwp-delete-row submitdelete">'+gcwp_delete+'</a></td>';
                     } else {
                         html += '<td><input type="text" name="gcwp[data_table][columns]['+(i-1)+'][]" /></td>';
                     }
@@ -29,12 +29,16 @@ jQuery('.gcwp-add-column').live('click', function(event) {
         jQuery('#gcwp-data tr').each(function() {
             jQuery(this).find('td:last').each(function() {
                 var html = '';
+                var tagName = 'td';
                 if (i == 0 || i == gcwp_rows-1) {
-                    html += '<td class="action"><a href="#" class="gcwp-delete-column submitdelete">Delete</a></td>';
+                    html += '<td class="action"><a href="#" class="gcwp-delete-column submitdelete">'+gcwp_delete+'</a></td>';
                 } else {
-                    html += '<' + this.tagName + '>';
+                    if (i == 1) {
+                        tagName = 'th';
+                    }
+                    html += '<' + tagName + '>';
                     html += '<input type="text" name="gcwp[data_table][columns][' + (gcwp_columns-2) + '][]" />';
-                    html += '</' + this.tagName + '>';
+                    html += '</' + tagName + '>';
                 }
                 i++;
                 jQuery(this).before(html);
@@ -93,8 +97,11 @@ jQuery(document).ready(function() {
     jQuery("a.gcwp-delete-column").live("click", function() {
         /* Better index-calculation from @activa */
         var myIndex = jQuery(this).closest("td").prevAll("td").length;
-        jQuery(this).parents("table").find("tr").each(function(){
-            jQuery(this).find("td:eq("+myIndex+"),th:eq("+myIndex+")").remove();
+
+        jQuery(this).parents("table").find("tr").each(function() {
+
+                jQuery(this).find("td:eq("+myIndex+"),th:eq("+(myIndex-1)+")").remove();
+
             fixIndices();
         });
         event.preventDefault();
