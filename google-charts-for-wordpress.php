@@ -1,15 +1,27 @@
 <?php
+/**
+ * Google Charts for WordPress
+ *
+ * PHP version 5.3
+ *
+ * @category WordPress
+ * @package  Google-charts-for-wordpress
+ * @author   Andreas Karlsson <andreas.karlsson@indiebytes.se>
+ * @license  GNU General Public License version 3 or later <http://www.gnu.org/licenses/>
+ * @link     https://github.com/indiebytes/google-charts-for-wordpress
+ */
+ 
 /*
 Plugin Name: Google Charts for WordPress
-Plugin URI: 
+Plugin URI: https://github.com/indiebytes/google-charts-for-wordpress
 Description: Adds a custom post type for Google Charts and a shortcode for including charts in posts and pages.
 Version: 1.0.0
 Author: Andreas Karlsson <andreas.karlsson@indiebytes.se>
-Author URI: http://andreaskarlsson.info/
+Author URI: https://github.com/indiebytes/
 
-This program is free software; you can redistribute it and/or modify
+This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
@@ -18,20 +30,34 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
 /**
  * Constants
  */
 define('GOOGLE_CHARTS_FOR_WORDPRESS_VERSION', '1.0.0');
-define('GOOGLE_CHARTS_FOR_WORDPRESS_PLUGIN_URL', plugin_dir_url(__FILE__ ));
+
+if (version_compare(phpversion(), '5.3.0', '<') === true) {
+    $relPath = basename(dirname(__FILE__));
+} else {
+    $relPath = basename(__DIR__);
+}
+
+define('GOOGLE_CHARTS_FOR_WORDPRESS_PLUGIN_RELPATH', $relPath);
+define(
+    'GOOGLE_CHARTS_FOR_WORDPRESS_PLUGIN_URL',
+    trailingslashit(
+        plugins_url(
+            $relPath
+        )
+    )
+);
 
 /**
  * Locale
  */
-load_plugin_textdomain('gcwp', false,  'google-charts-for-wordpress/languages/');
+load_plugin_textdomain('gcwp', false, GOOGLE_CHARTS_FOR_WORDPRESS_PLUGIN_RELPATH . '/languages/');
 
 /**
  * Google Charts For WordPress
@@ -50,8 +76,11 @@ load_plugin_textdomain('gcwp', false,  'google-charts-for-wordpress/languages/')
  * and column controls the height of the single bar represented by this row and
  * column.
  *
- * @package default
- * @author Andreas Karlsson <andreas.karlsson@indiebytes.se>
+ * @category WordPress
+ * @package  Google-charts-for-wordpress
+ * @author   Andreas Karlsson <andreas.karlsson@indiebytes.se>
+ * @license  GNU General Public License version 3 or later <http://www.gnu.org/licenses/>
+ * @link     https://github.com/indiebytes/google-charts-for-wordpress
  **/
 class GoogleChartsForWordPress
 {
@@ -78,12 +107,6 @@ class GoogleChartsForWordPress
         );
 
         /**
-         * Activation and deactivation
-         */
-        register_activation_hook(__FILE__, array(&$this, 'activation'));
-        register_deactivation_hook(__FILE__, array(&$this, 'deactivation'));
-        
-        /**
          * Actions
          */
         add_action('init', array(&$this, 'createPostType'));
@@ -98,34 +121,30 @@ class GoogleChartsForWordPress
         add_shortcode('googlechart', array(&$this, 'shortcode'));
     }
 
+    /**
+     * Locale variables for javascript
+     *
+     * @return void
+     * @author Andreas Karlsson <andreas.karlsson@indiebytes.se>
+     **/
     function jsLocale()
     {
         printf('<script>var gcwp_delete = "%s";</script>', __('Delete', 'gcwp'));
     }
 
     /**
-     * Plugin activation
+     * Initialization
      *
      * @return void
      * @author Andreas Karlsson <andreas.karlsson@indiebytes.se>
      **/
-    function activation()
-    {
-    }
-
-    /**
-     * Plugin activation
-     *
-     * @return void
-     * @author Andreas Karlsson <andreas.karlsson@indiebytes.se>
-     **/
-    function deactivation()
-    {
-    }
-
     function init()
     {
-        wp_register_script('googlejsapi', 'https://www.google.com/jsapi');
+        wp_register_script(
+            'googlejsapi',
+            'https://www.google.com/jsapi',
+            array(), GOOGLE_CHARTS_FOR_WORDPRESS_VERSION
+        );
         wp_enqueue_script('googlejsapi');
     }
 
@@ -144,6 +163,7 @@ class GoogleChartsForWordPress
             "manage_edit-gcwp_chart_columns",
             array(&$this, "postTypeColumns")
         );
+
         add_action(
             "manage_posts_custom_column",
             array(&$this, "postTypeColumnOutput")
@@ -179,19 +199,25 @@ class GoogleChartsForWordPress
             "low"
         );
 
+        register_setting('gcwp', 'gcwp');
+
+        /**
+         * Register and enqueue stylesheet and javascript
+         */
         wp_register_style(
             'gcwp_css',
-            plugins_url(basename(dirname(plugin_basename(__FILE__))) . '/css/style.css'),
+            GOOGLE_CHARTS_FOR_WORDPRESS_PLUGIN_URL . 'css/style.css',
             array(), GOOGLE_CHARTS_FOR_WORDPRESS_VERSION
         );
+
         wp_register_script(
             'gcwp_js',
-            plugins_url(basename(dirname(plugin_basename(__FILE__))) . '/js/script.js')
+            GOOGLE_CHARTS_FOR_WORDPRESS_PLUGIN_URL . 'js/script.js',
+            array(), GOOGLE_CHARTS_FOR_WORDPRESS_VERSION
         );
+
         wp_enqueue_style('gcwp_css');
         wp_enqueue_script('gcwp_js');
-
-        register_setting('gcwp', 'gcwp');
     }
 
     /**
@@ -202,7 +228,8 @@ class GoogleChartsForWordPress
      **/
     function createPostType()
     {
-        register_post_type('gcwp_chart',
+        register_post_type(
+            'gcwp_chart',
             array(
                 'labels' => array(
                     'name' => __('Google Charts', 'gcwp'),
@@ -228,7 +255,14 @@ class GoogleChartsForWordPress
             )
         );
     }
-    function postTypeColumns($columns)
+    
+    /**
+     * List columns
+     *
+     * @return array
+     * @author Andreas Karlsson <andreas.karlsson@indiebytes.se>
+     **/
+    function postTypeColumns()
     {
         $columns = array(
             'cb' => '<input type="checkbox" />',
@@ -239,57 +273,91 @@ class GoogleChartsForWordPress
         return $columns;
     }
 
+    /**
+     * Column output for custom list columns
+     *
+     * @param string $column List column to generate output for
+     *
+     * @return void
+     * @author Andreas Karlsson <andreas.karlsson@indiebytes.se>
+     **/
     function postTypeColumnOutput($column)
     {
         global $post;
+
         $serializedData = get_post_meta($post->ID, 'gcwp', true);
         $data = $serializedData ? unserialize($serializedData) : $this->defaultData;
+
         switch ($column) {
-            case 'format':
-                $googleChartObject = '';
-                foreach (explode('-', $data['chart_format']) as $word) {
-                    $googleChartObject .= ucfirst($word);
-                }
-                echo $googleChartObject;
-                break;
-            case 'shortcode':
-                printf('[googlechart id="%d"]', $post->ID);
-                break;
-            default:
-                break;
+        case 'format':
+            $googleChartObject = '';
+            foreach (explode('-', $data['chart_format']) as $word) {
+                $googleChartObject .= ucfirst($word);
+            }
+            echo $googleChartObject;
+            break;
+        case 'shortcode':
+            printf('[googlechart id="%d"]', $post->ID);
+            break;
+        default:
+            break;
         }
     }
     
+    /**
+     * Meta box for Google Chart format
+     *
+     * @return void
+     * @author Andreas Karlsson <andreas.karlsson@indiebytes.se>
+     **/
     function postTypeMetaFormat()
     {
         global $post;
         $serializedData = get_post_meta($post->ID, 'gcwp', true);
         $data = $serializedData ? unserialize($serializedData) : $this->defaultData;
-?>
-    <div id="post-formats-select">
-        <input type="radio" name="gcwp[chart_format]" class="post-format" id="post-format-pie" value="pie-chart"<?php checked('pie-chart', $data['chart_format']); ?>> <label for="post-format-pie"><?php _e('Pie Chart', 'gcwp'); ?></label>
-        <br />
-        <input type="radio" name="gcwp[chart_format]" class="post-format" id="post-format-column" value="column-chart"<?php checked('column-chart', $data['chart_format']); ?>> <label for="post-format-column"><?php _e('Column Chart', 'gcwp'); ?></label>
-    </div>
-    <?php echo '<input type="hidden" name="gcwp_noncename" id="gcwp_noncename" value="' .
+        ?>
+        <div id="post-formats-select">
+            <input type="radio" name="gcwp[chart_format]" class="post-format" id="post-format-pie" value="pie-chart"<?php checked('pie-chart', $data['chart_format']); ?>> <label for="post-format-pie"><?php _e('Pie Chart', 'gcwp'); ?></label>
+            <br />
+            <input type="radio" name="gcwp[chart_format]" class="post-format" id="post-format-column" value="column-chart"<?php checked('column-chart', $data['chart_format']); ?>> <label for="post-format-column"><?php _e('Column Chart', 'gcwp'); ?></label>
+        </div>
+        <?php echo '<input type="hidden" name="gcwp_noncename" id="gcwp_noncename" value="' .
             wp_create_nonce(plugin_basename(__FILE__)) . '" />'; ?>
 
-    <?php }
+        <?php
+    }
 
+    /**
+     * Preview meta box
+     *
+     * @return void
+     * @author Andreas Karlsson <andreas.karlsson@indiebytes.se>
+     **/
     function postTypeMetaPreview()
     { 
         global $post;
-?>
+        ?>
 
-    <div id="gcwp-preview">
-        <p><?php _e('The preview chart is updated when the chart is saved or updated.', 'gcwp'); ?></p>
-        <?php echo do_shortcode("[googlechart id='$post->ID']")?>
-    </div>
+        <div id="gcwp-preview">
+            <p><?php _e('The preview chart is updated when the chart is saved or updated.', 'gcwp'); ?></p>
+            <?php echo do_shortcode("[googlechart id='$post->ID']")?>
+        </div>
 
-    <?php }
+        <?php
+    }
 
+    /**
+     * Post meta box for data table
+     *
+     * @return void
+     * @author Andreas Karlsson <andreas.karlsson@indiebytes.se>
+     **/
     function postTypeMetaDataTable()
-    { ?>
+    {
+        global $post;
+        $serializedData = get_post_meta($post->ID, 'gcwp', true);
+        $data = $serializedData ? unserialize($serializedData) : $this->defaultData;
+        ?>
         <div id="gcwp-pie-chart-information" class="gcwp-chart-information">
             <h4><?php _e('Data Tables for Pie Charts', 'gcwp'); ?></h4>
             <p>
@@ -304,57 +372,65 @@ class GoogleChartsForWordPress
         
         <div class="gcwp-actions top-actions"><a href="#" class="button gcwp-add-row"><?php _e('Add New Row', 'gcwp'); ?></a> <a href="#" class="button gcwp-add-column"><?php _e('Add New Column', 'gcwp'); ?></a></div>
         <div id="gcwp-data">
-            <?php
-                global $post;
-                $serializedData = get_post_meta($post->ID, 'gcwp', true);
-                $data = $serializedData ? unserialize($serializedData) : $this->defaultData;
-                $html = '<table>';
-                $html .= '<tr><td></td>';
-                foreach ($data['data_table']['columns'] as $columnIndex => $column) {
-                    if ($columnIndex > 1) {
-                        $html .= sprintf('<td class="action"><a href="#" class="gcwp-delete-column submitdelete">%s</a></td>', __('Delete', 'gcwp'));
-                    } else {
-                        $html .= '<td></td>';
-                    }
-                }
-                $html .= '<td></td></tr>';
-                for ($i = 0; $i <= $data['rows']; $i++) {
-                    if ($i > 2) {
-                        $html .= sprintf('<tr><td class="action"><a href="#" class="gcwp-delete-row submitdelete">%s</a></td>', __('Delete', 'gcwp'));
-                    } else {
-                        $html .= '<tr><td></td>';
-                    }
-                    foreach ($data['data_table']['columns'] as $columnIndex => $column) {
-                        $html .= sprintf('<%s><input type="text" value="%s" name="gcwp[data_table][columns][%s][]" /></%s>', $i == 0 ? 'th' : 'td', $column[$i], $columnIndex, $i == 0 ? 'th' : 'td');
-                    }
-                    if ($i > 2) {
-                        $html .= sprintf('<td class="action"><a href="#" class="gcwp-delete-row submitdelete">%s</a></td></tr>', __('Delete', 'gcwp'));;
-                    } else {
-                        $html .= '<td></td></tr>';
-                    }
-                }
-                $html .= '<tr><td></td>';
-                foreach ($data['data_table']['columns'] as $columnIndex => $column) {
-                    if ($columnIndex > 1) {
-                        $html .= sprintf('<td class="action"><a href="#" class="gcwp-delete-column submitdelete">%s</a></td>', __('Delete', 'gcwp'));
-                    } else {
-                        $html .= '<td></td>';
-                    }
-                }
-                $html .= '<td></td></tr>';
-                $html .= '</table>';
-                echo $html;
+    <?php
+        $html = '<table>';
+        $html .= '<tr><td></td>';
 
-            ?>
+        foreach ($data['data_table']['columns'] as $columnIndex => $column) {
+            if ($columnIndex > 1) {
+                $html .= sprintf('<td class="action"><a href="#" class="gcwp-delete-column submitdelete">%s</a></td>', __('Delete', 'gcwp'));
+            } else {
+                $html .= '<td></td>';
+            }
+        }
+
+        $html .= '<td></td></tr>';
+
+        for ($i = 0; $i <= $data['rows']; $i++) {
+            if ($i > 2) {
+                $html .= sprintf('<tr><td class="action"><a href="#" class="gcwp-delete-row submitdelete">%s</a></td>', __('Delete', 'gcwp'));
+            } else {
+                $html .= '<tr><td></td>';
+            }
+            foreach ($data['data_table']['columns'] as $columnIndex => $column) {
+                $html .= sprintf('<%s><input type="text" value="%s" name="gcwp[data_table][columns][%s][]" /></%s>', $i == 0 ? 'th' : 'td', $column[$i], $columnIndex, $i == 0 ? 'th' : 'td');
+            }
+            if ($i > 2) {
+                $html .= sprintf('<td class="action"><a href="#" class="gcwp-delete-row submitdelete">%s</a></td></tr>', __('Delete', 'gcwp'));;
+            } else {
+                $html .= '<td></td></tr>';
+            }
+        }
+
+        $html .= '<tr><td></td>';
+
+        foreach ($data['data_table']['columns'] as $columnIndex => $column) {
+            if ($columnIndex > 1) {
+                $html .= sprintf('<td class="action"><a href="#" class="gcwp-delete-column submitdelete">%s</a></td>', __('Delete', 'gcwp'));
+            } else {
+                $html .= '<td></td>';
+            }
+        }
+
+        $html .= '<td></td></tr>';
+        $html .= '</table>';
+        echo $html;
+        ?>
         </div>
-        <div class="gcwp-actions bottom-actions"><a href="#" class="button gcwp-add-row"><?php _e('Add New Row', 'gcwp'); ?></a> <a href="#" class="button gcwp-add-column"><?php _e('Add New Column', 'gcwp'); ?></a></div>
-    <?php }
+        <div class="gcwp-actions bottom-actions">
+            <a href="#" class="button gcwp-add-row"><?php _e('Add New Row', 'gcwp'); ?></a>
+            <a href="#" class="button gcwp-add-column"><?php _e('Add New Column', 'gcwp'); ?></a>
+        </div>
+    <?php
+    }
 
     /**
-     * undocumented function
+     * Save Google Chart
+     *
+     * @param int $postId Id for the Google Chart post
      *
      * @return void
-     * @author Andreas Karlsson
+     * @author Andreas Karlsson <andreas.karlsson@indiebytes.se>
      **/
     function postTypeSave($postId)
     {
@@ -372,7 +448,9 @@ class GoogleChartsForWordPress
             return;
         }
 
-        if (!array_key_exists('gcwp_noncename', $_POST) && !wp_verify_nonce($_POST['gcwp_noncename'], plugin_basename( __FILE__ ))) {
+        if (!array_key_exists('gcwp_noncename', $_POST)
+            && !wp_verify_nonce($_POST['gcwp_noncename'], plugin_basename(__FILE__))
+        ) {
             return;
         }
 
@@ -405,12 +483,15 @@ class GoogleChartsForWordPress
     }
 
     /**
-     * Shortcode
+     * Shortcode to include Google Chart in post or page
      *
-     * @return void
-     * @author Andreas Karlsson
+     * @param array $atts Attributes sent with the shortcode
+     *
+     * @return string
+     * @author Andreas Karlsson <andreas.karlsson@indiebytes.se>
      **/
-    function shortcode($atts) {
+    function shortcode($atts)
+    {
         extract(
             shortcode_atts(
                 array(
@@ -444,8 +525,13 @@ class GoogleChartsForWordPress
                 function drawChart() {
                     $jsDataTable
 
-                    var chart = new google.visualization.$googleChartObject(document.getElementById('gcwp-$id'));
-                    chart.draw(data, {width: $width, height: $height, title: '$post->post_title'});
+                    var chart = new google.visualization.$googleChartObject(
+                        document.getElementById('gcwp-$id')
+                    );
+                    chart.draw(
+                        data,
+                        {width: $width, height: $height, title: '$post->post_title'}
+                    );
                 }
             </script>
 JS;
@@ -454,10 +540,13 @@ JS;
     }
 
     /**
-     * undocumented function
+     * Generate data table in javascript
      *
-     * @return void
-     * @author Andreas Karlsson
+     * @param array  $data   Information to build the data table from.
+     * @param string $format Deprecated
+     *
+     * @return string
+     * @author Andreas Karlsson <andreas.karlsson@indiebytes.se>
      **/
     function generateJsDataTable($data, $format = 'javascript')
     {
@@ -473,7 +562,11 @@ JS;
         }
 
         foreach ($data['data_table']['columns'] as $columnIndex => $column) {
-            $js .= sprintf("data.addColumn('%s', '%s');", $columnIndex == 0 ? 'string' : 'number', $column[0] == '' ? __('Label missing', 'gcwp') : $column[0]);
+            $js .= sprintf(
+                "data.addColumn('%s', '%s');",
+                $columnIndex == 0 ? 'string' : 'number',
+                $column[0] == '' ? __('Label missing', 'gcwp') : $column[0]
+            );
 
             foreach ($column as $rowIndex => $value) {
                 if ($rowIndex == 0 || $columnIndex > $data['columns']) {
@@ -483,7 +576,12 @@ JS;
                         $value = $columnIndex == 0 ? __('Label missing', 'gcwp') : 0;
                     }
 
-                    $setValues .= sprintf('data.setValue(%d, %d, %s);', $rowIndex-1, $columnIndex, $columnIndex == 0 ? "'$value'" : $value);
+                    $setValues .= sprintf(
+                        'data.setValue(%d, %d, %s);',
+                        $rowIndex-1,
+                        $columnIndex,
+                        $columnIndex == 0 ? "'$value'" : $value
+                    );
                 }
             }
         }

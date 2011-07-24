@@ -1,53 +1,6 @@
 var gcwp_columns;
 var gcwp_rows;
 
-jQuery('.gcwp-add-row').live('click', function(event) {
-        gcwpFadeColumns();
-        gcwp_columns = jQuery('#gcwp-data tr:last td').length;
-        gcwp_rows = jQuery('#gcwp-data tr').length;
-        jQuery('#gcwp-data tr:last').each(function() {
-                var html = '<tr>';
-                for (var i = 0; i < gcwp_columns; i++) {
-                    if (i == 0 || i == gcwp_columns-1) {
-                        html += '<td class="action"><a href="#" class="gcwp-delete-row submitdelete">'+gcwp_delete+'</a></td>';
-                    } else {
-                        html += '<td><input type="text" name="gcwp[data_table][columns]['+(i-1)+'][]" /></td>';
-                    }
-                }
-                html += '</tr>';
-                jQuery(this).before(html);
-        });
-        gcwpFadeColumns();
-        event.preventDefault();
-});
-
-jQuery('.gcwp-add-column').live('click', function(event) {
-        gcwp_columns = jQuery('#gcwp-data tr:last td').length;
-        gcwp_rows = jQuery('#gcwp-data tr').length;
-
-        var i = 0;
-        jQuery('#gcwp-data tr').each(function() {
-            jQuery(this).find('td:last').each(function() {
-                var html = '';
-                var tagName = 'td';
-                if (i == 0 || i == gcwp_rows-1) {
-                    html += '<td class="action"><a href="#" class="gcwp-delete-column submitdelete">'+gcwp_delete+'</a></td>';
-                } else {
-                    if (i == 1) {
-                        tagName = 'th';
-                    }
-                    html += '<' + tagName + '>';
-                    html += '<input type="text" name="gcwp[data_table][columns][' + (gcwp_columns-2) + '][]" />';
-                    html += '</' + tagName + '>';
-                }
-                i++;
-                jQuery(this).before(html);
-            });
-        });
-        gcwpFadeColumns();
-        event.preventDefault();
-});
-
 function gcwpFadeColumns() {
     jQuery('#gcwp-format input[type="radio"]:checked').each(function() {
 
@@ -87,6 +40,54 @@ function fixIndices() {
 
 jQuery(document).ready(function() {
     gcwpFadeColumns();
+
+    jQuery('.gcwp-add-row').live('click', function(event) {
+            gcwpFadeColumns();
+            gcwp_columns = jQuery('#gcwp-data tr:last td').length;
+            gcwp_rows = jQuery('#gcwp-data tr').length;
+            jQuery('#gcwp-data tr:last').each(function() {
+                    var html = '<tr>';
+                    for (var i = 0; i < gcwp_columns; i++) {
+                        if (i == 0 || i == gcwp_columns-1) {
+                            html += '<td class="action"><a href="#" class="gcwp-delete-row submitdelete">'+gcwp_delete+'</a></td>';
+                        } else {
+                            html += '<td><input type="text" name="gcwp[data_table][columns]['+(i-1)+'][]" /></td>';
+                        }
+                    }
+                    html += '</tr>';
+                    jQuery(this).before(html);
+            });
+            gcwpFadeColumns();
+            event.preventDefault();
+    });
+
+    jQuery('.gcwp-add-column').live('click', function(event) {
+            gcwp_columns = jQuery('#gcwp-data tr:last td').length;
+            gcwp_rows = jQuery('#gcwp-data tr').length;
+
+            var i = 0;
+            jQuery('#gcwp-data tr').each(function() {
+                jQuery(this).find('td:last').each(function() {
+                    var html = '';
+                    var tagName = 'td';
+                    if (i == 0 || i == gcwp_rows-1) {
+                        html += '<td class="action"><a href="#" class="gcwp-delete-column submitdelete">'+gcwp_delete+'</a></td>';
+                    } else {
+                        if (i == 1) {
+                            tagName = 'th';
+                        }
+                        html += '<' + tagName + '>';
+                        html += '<input type="text" name="gcwp[data_table][columns][' + (gcwp_columns-2) + '][]" />';
+                        html += '</' + tagName + '>';
+                    }
+                    i++;
+                    jQuery(this).before(html);
+                });
+            });
+            gcwpFadeColumns();
+            event.preventDefault();
+    });
+
     jQuery('#gcwp-format input[type="radio"]').bind('change', function() {
         gcwpFadeColumns();
         jQuery('.gcwp-chart-information').each(function() {
