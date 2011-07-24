@@ -1,7 +1,5 @@
 h1. Google Charts for WordPress
 
-*Work in progress.* A first version will be ready July 20, 2011. 
-
 h2. Supported Chart Types
 
 * *Pie Chart*<br/>"http://code.google.com/apis/chart/interactive/docs/gallery/piechart.html":http://code.google.com/apis/chart/interactive/docs/gallery/piechart.html
