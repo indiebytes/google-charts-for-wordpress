@@ -41,6 +41,12 @@ function fixIndices() {
 jQuery(document).ready(function() {
     gcwpFadeColumns();
 
+    jQuery('.gcwp-chart-information').each(function() {
+        jQuery(this).hide();
+    });
+
+    jQuery('#gcwp-'+jQuery('#gcwp-format input[type="radio"]:checked').val()+'-information').show();
+
     jQuery('.gcwp-add-row').live('click', function(event) {
             gcwpFadeColumns();
             gcwp_columns = jQuery('#gcwp-data tr:last td').length;
@@ -91,8 +97,9 @@ jQuery(document).ready(function() {
     jQuery('#gcwp-format input[type="radio"]').bind('change', function() {
         gcwpFadeColumns();
         jQuery('.gcwp-chart-information').each(function() {
-            jQuery(this).toggle();
+            jQuery(this).hide();
         });
+        jQuery('#gcwp-'+this.value+'-information').show();
     });
 
     jQuery("a.gcwp-delete-column").live("click", function() {

@@ -320,6 +320,8 @@ class GoogleChartsForWordPress
             <input type="radio" name="gcwp[chart_format]" class="post-format" id="post-format-pie" value="pie-chart"<?php checked('pie-chart', $data['chart_format']); ?>> <label for="post-format-pie"><?php _e('Pie Chart', 'gcwp'); ?></label>
             <br />
             <input type="radio" name="gcwp[chart_format]" class="post-format" id="post-format-column" value="column-chart"<?php checked('column-chart', $data['chart_format']); ?>> <label for="post-format-column"><?php _e('Column Chart', 'gcwp'); ?></label>
+            <br />
+            <input type="radio" name="gcwp[chart_format]" class="post-format" id="post-format-area" value="area-chart"<?php checked('area-chart', $data['chart_format']); ?>> <label for="post-format-area"><?php _e('Area Chart', 'gcwp'); ?></label>
         </div>
         <?php echo '<input type="hidden" name="gcwp_noncename" id="gcwp_noncename" value="' .
             wp_create_nonce(plugin_basename(__FILE__)) . '" />'; ?>
@@ -368,6 +370,11 @@ class GoogleChartsForWordPress
         <div id="gcwp-column-chart-information" class="gcwp-chart-information">
             <h4><?php _e('Data Tables for Column Charts', 'gcwp'); ?></h4>
             <p><?php _e('Each row in the table represents a group of adjacent bars. The first column in the table should be a string, and represents the label of that group of bars. Any number of columns can follow, all numeric, each representing the bars withthe same color and relative position in each group. The value at a given row and column controls the height of the single bar represented by this row and column.', 'gcwp'); ?></p>
+        </div>
+        
+        <div id="gcwp-area-chart-information" class="gcwp-chart-information">
+            <h4><?php _e('Data Tables for Area Charts', 'gcwp'); ?></h4>
+            <p><?php _e('The first column holds the category labels. You can have any number of numeric columns after the first string column. Each numeric column represents a separate series in the chart.', 'gcwp'); ?></p>
         </div>
         
         <div class="gcwp-actions top-actions"><a href="#" class="button gcwp-add-row"><?php _e('Add New Row', 'gcwp'); ?></a> <a href="#" class="button gcwp-add-column"><?php _e('Add New Column', 'gcwp'); ?></a></div>
